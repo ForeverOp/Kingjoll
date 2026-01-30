@@ -4,3 +4,37 @@ const scriptURLs = {
   3: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/script3.lua",
   notfound: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/notfound.lua"
 };
+const pageName = `init.lua${pageCounter}`;
+luaPages[pageName] = document.getElementById("scriptEditor").value.trim();
+pageCounter++;
+// ==========================
+// Arquivo: luaPages.js
+// Banco de páginas Lua digitáveis
+// ==========================
+
+const luaPages = {
+    "init.lua1": `-- Página 1 de exemplo
+print("Olá, Lua 1!")`,
+
+    "init.lua2": `-- Página 2 de exemplo
+print("Olá, Lua 2!")`,
+
+    "init.lua3": `-- Página 3 de exemplo
+print("Olá, Lua 3!")`
+};
+
+// Função para acessar a página Lua digitável
+function getLuaPage(url){
+    // url termina com init.luaX
+    const pageName = url.split("/").pop();
+    if(luaPages[pageName]){
+        return luaPages[pageName];
+    } else {
+        console.warn(`Página ${pageName} não encontrada!`);
+        return "";
+    }
+}
+
+// Exemplo de uso:
+// loadstring(getLuaPage("https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/init.lua2"))()
+<script src="luaPages.js"></script>
