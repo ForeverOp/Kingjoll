@@ -116,3 +116,131 @@ function copiar(){
 
 </body>
 </html>
+
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Lua Pages RAW</title>
+
+<style>
+body{
+    margin:0;
+    background:#060b14;
+    color:#dbeaff;
+    font-family:monospace;
+}
+header{
+    background:#0b1c33;
+    padding:14px;
+    text-align:center;
+    color:#5aa2ff;
+    font-size:18px;
+}
+main{
+    max-width:900px;
+    margin:auto;
+    padding:20px;
+}
+.box{
+    background:#020814;
+    border:1px solid #1e4b88;
+    padding:15px;
+    margin-bottom:18px;
+}
+textarea{
+    width:100%;
+    background:#02060d;
+    color:#9fd0ff;
+    border:1px solid #1f4d99;
+    padding:12px;
+    font-size:14px;
+}
+select, button{
+    background:#1f6cff;
+    color:#fff;
+    border:none;
+    padding:8px 14px;
+    font-weight:bold;
+    cursor:pointer;
+}
+button:hover{
+    background:#1554c9;
+}
+label{
+    display:block;
+    margin-bottom:6px;
+    color:#7db9ff;
+}
+</style>
+</head>
+
+<body>
+
+<header>Lua RAW Pages — init.lua1 → init.lua100</header>
+
+<main>
+
+<div class="box">
+<label>📄 Página Lua</label>
+<select id="pageSelect"></select>
+</div>
+
+<div class="box">
+<label>📝 Página Lua (digitável)</label>
+<textarea id="editor" rows="14"></textarea>
+<button onclick="savePage()">Salvar nesta página</button>
+</div>
+
+<div class="box">
+<label>🔗 Loadstring desta página</label>
+<textarea id="loadstring" rows="4" readonly></textarea>
+<button onclick="copyLoad()">Copiar Loadstring</button>
+</div>
+
+</main>
+
+<script>
+const TOTAL_PAGES = 100
+const pages = {}
+let currentPage = 1
+
+// cria páginas
+for(let i=1;i<=TOTAL_PAGES;i++){
+    pages[i] = `-- init.lua${i}\nprint("Página Lua ${i}")`
+    const opt = document.createElement("option")
+    opt.value = i
+    opt.textContent = `init.lua${i}`
+    pageSelect.appendChild(opt)
+}
+
+function loadPage(n){
+    currentPage = n
+    editor.value = pages[n]
+    updateLoadstring()
+}
+
+function savePage(){
+    pages[currentPage] = editor.value
+    updateLoadstring()
+}
+
+function updateLoadstring(){
+    loadstring.value =
+`loadstring(game:HttpGet("https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/init.lua${currentPage}"))()`
+}
+
+function copyLoad(){
+    loadstring.select()
+    document.execCommand("copy")
+    alert("Loadstring copiado")
+}
+
+pageSelect.addEventListener("change", e=>{
+    loadPage(e.target.value)
+})
+
+loadPage(1)
+</script>
+
+</body>
+</html>
