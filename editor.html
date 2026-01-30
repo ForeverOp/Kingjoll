@@ -1,27 +1,28 @@
+<textarea id="scriptEditor" style="height:200px;">print("Hello World")</textarea>
+<button onclick="useEditorScript()">Usar este Script</button>
+
+<textarea id="loadstringBox" readonly style="height:80px;"></textarea>
+
 <script>
-const BASE_RAW_URL = "https://raw.githubusercontent.com/Hourvester/Kingjoll/main/init.lua";
-let pageNumber = 2; // começa no init.lua2
+let savedScripts = {};
+let pageCounter = 1;
 
 function useEditorScript() {
     const script = document.getElementById("scriptEditor").value.trim();
-    if (!script) {
-        alert("Editor vazio");
-        return;
-    }
+    if(!script){ alert("Editor vazio"); return; }
 
+    // salva na página
+    const pageName = "init.lua" + pageCounter;
+    savedScripts[pageName] = script;
+
+    // gera loadstring “virtual” pegando o script interno
     const loadstringBox = document.getElementById("loadstringBox");
+    loadstringBox.value = `loadstring(savedScripts["${pageName}"])()`;
 
-    loadstringBox.value =
-`loadstring(game:HttpGet("${BASE_RAW_URL}${pageNumber}"))()`;
-
-    // apenas incrementa para o próximo arquivo
-    pageNumber++;
+    alert(`Script salvo como ${pageName} na própria página!`);
+    pageCounter++;
 }
 
-function copyLoadstring() {
-    const box = document.getElementById("loadstringBox");
-    box.select();
-    document.execCommand("copy");
-    alert("Loadstring copiado!");
-}
+// Para testar: execute no console do navegador
+// loadstring(savedScripts["init.lua1"])()
 </script>
