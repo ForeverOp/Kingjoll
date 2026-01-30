@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>VoxTheSeaPaste Editor</title>
+<title>VoxTheSeaPaste - Editor & Menu</title>
 <style>
 body {
   margin:0;
@@ -40,10 +40,59 @@ button.action {
   font-weight:bold;
 }
 button.action:hover { background:#0aa; }
+h2 { margin-top:0; }
+.menu {
+  background:#111;
+  padding:15px;
+  border-radius:10px;
+  box-shadow:0 0 10px #0ff;
+  margin-bottom:20px;
+}
+.tab { margin-top:10px; }
+.tab button {
+  background:#000;
+  color:#0ff;
+  border:none;
+  padding:6px 12px;
+  cursor:pointer;
+  margin-right:4px;
+  border-radius:5px;
+}
+.tab button.active { background:#0ff; color:#000; }
+.tabcontent {
+  display:none;
+  padding:10px 0;
+}
+.tabcontent.active { display:block; }
 </style>
 </head>
 <body>
 
+<!-- MENU ANTIGO -->
+<div class="menu">
+  <h2>🌊 VoxTheSeaPaste Menu</h2>
+  <div class="tab">
+    <button class="tablinks active" onclick="openTab(event,'Combat')">Combat</button>
+    <button class="tablinks" onclick="openTab(event,'Player')">Player</button>
+    <button class="tablinks" onclick="openTab(event,'Visual')">Visual</button>
+    <button class="tablinks" onclick="openTab(event,'Misc')">Misc</button>
+  </div>
+
+  <div id="Combat" class="tabcontent active">
+    <p>AutoFarm, Teleport Player, Hitbox etc.</p>
+  </div>
+  <div id="Player" class="tabcontent">
+    <p>WalkSpeed, JumpPower, Gravity, Save Spawn</p>
+  </div>
+  <div id="Visual" class="tabcontent">
+    <p>ESP Players, Highlights etc.</p>
+  </div>
+  <div id="Misc" class="tabcontent">
+    <p>Plataforma, Teleporte, Misc Buttons</p>
+  </div>
+</div>
+
+<!-- EDITOR LUA -->
 <section class="card">
 <h2>📝 Editor de Script Lua</h2>
 <textarea id="scriptEditor" style="height:260px;">
@@ -53,6 +102,7 @@ print("Kingjoll Editor Digital")
 <button class="action" onclick="useEditorScript()">Usar este Script</button>
 </section>
 
+<!-- LOADSTRING -->
 <section class="card">
 <h2>🔗 Loadstring Gerado</h2>
 <textarea id="loadstringBox" readonly style="height:120px;"></textarea>
@@ -60,6 +110,17 @@ print("Kingjoll Editor Digital")
 </section>
 
 <script>
+/* --- MENU ANTIGO FUNCIONAL --- */
+function openTab(evt, tabName) {
+  const tabcontents = document.getElementsByClassName("tabcontent");
+  const tablinks = document.getElementsByClassName("tablinks");
+  for (let i=0;i<tabcontents.length;i++){ tabcontents[i].classList.remove("active"); }
+  for (let i=0;i<tablinks.length;i++){ tablinks[i].classList.remove("active"); }
+  document.getElementById(tabName).classList.add("active");
+  evt.currentTarget.classList.add("active");
+}
+
+/* --- EDITOR LUA + LOADSTRING INFINITO --- */
 const BASE_RAW_URL = "https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/init.lua";
 let pageNumber = 2; // começa em init.lua2
 
