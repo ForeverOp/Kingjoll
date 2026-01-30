@@ -1,209 +1,327 @@
-if getgenv().VoxLoaded then return end
-getgenv().VoxLoaded = true
+-- PLACEID
+if game.PlaceId ~= 3082002798 then return end
 
-local BASE = "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste"
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LP = Players.LocalPlayer
 
--- 🔐 KEY SYSTEM PRIMEIRO
-loadstring(game:HttpGet(BASE.."/security/gate.lua"))()
+--------------------------------------------------
+-- VARIÁVEIS
+--------------------------------------------------
+local AutoFarm = false
+local AutoTP = false
+local ESPEnabled = false
 
--- CONFIGURAÇÕES
-loadstring(game:HttpGet(BASE.."/config.lua"))()
-loadstring(game:HttpGet(BASE.."/flags.lua"))()
+local HitboxGlobalSize = 5
+local HitboxTargetSize = 10
+local HitboxTransparency = 0.7
+local TargetHitboxName = ""
+local TargetName = ""
 
--- LOADER
-loadstring(game:HttpGet(BASE.."/router.lua"))()
+local WalkSpeedValue = 16
+local JumpPowerValue = 50
+local SaveSpawnPos
 
--- VoxTheSeaPaste init.lua
-print("VoxTheSeaPaste Editor carregado!")
+local GravityValue = workspace.Gravity
+local GravityEnabled = false
 
--- VoxTheSeaPaste - Infinite Lua Pages
--- Key global
-local REQUIRED_KEY = "Nerph"
+local Platform
+local CurrentTarget
+local Character, HRP, Humanoid
 
--- ===============================
--- PEGAR PARAMETROS (?id= & ?key=)
--- ===============================
-local HttpService = game:GetService("HttpService")
-
-local function parseQuery(url)
-    local query = {}
-    local q = url:match("%?(.*)")
-    if not q then return query end
-    for pair in q:gmatch("[^&]+") do
-        local k,v = pair:match("([^=]+)=([^=]+)")
-        if k and v then
-            query[k] = v
-        end
-    end
-    return query
+--------------------------------------------------
+-- CHARACTER FIX (RESPAWN)
+--------------------------------------------------
+local function UpdateCharacter()
+	Character = LP.Character or LP.CharacterAdded:Wait()
+	HRP = Character:WaitForChild("HumanoidRootPart")
+	Humanoid = Character:WaitForChild("Humanoid")
 end
 
-local url = tostring(getgenv()._VOX_URL or "")
-local params = parseQuery(url)
+UpdateCharacter()
 
-local SCRIPT_ID = params.id or "default"
-local USER_KEY  = params.key or ""
+LP.CharacterAdded:Connect(function(char)
+	task.wait(0.3)
+	UpdateCharacter()
+	CurrentTarget = nil
 
--- ===============================
--- KEY SYSTEM
--- ===============================
-if USER_KEY ~= REQUIRED_KEY then
-    warn("❌ KEY INCORRETA")
-    return
+	if SaveSpawnPos and char:FindFirstChild("HumanoidRootPart") then
+		char.HumanoidRootPart.CFrame = SaveSpawnPos
+	end
+
+	if GravityEnabled then
+		workspace.Gravity = GravityValue
+	end
+end)
+
+--------------------------------------------------
+-- RAYFIELD + KEY
+--------------------------------------------------
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+	Name = "Speed Menu PRO",
+	LoadingTitle = "Speed Menu",
+	LoadingSubtitle = "by XMenu",
+	KeySystem = true,
+	KeySettings = {
+		Title = "Speed Menu PRO",
+		Subtitle = "Digite a Key",
+		Note = "Key obrigatória",
+		FileName = "SpeedMenuKey",
+		SaveKey = false,
+		Key = { "Nerph" }
+	}
+})
+
+local Combat = Window:CreateTab("Combat")
+local Player = Window:CreateTab("Player")
+local Visual = Window:CreateTab("Visual")
+local Misc = Window:CreateTab("Misc")
+
+--------------------------------------------------
+-- COMBAT
+--------------------------------------------------
+Combat:CreateToggle({
+	Name = "Auto Farm",
+	CurrentValue = false,
+	Callback = function(v)
+		AutoFarm = v
+		if not v then CurrentTarget = nil end
+	end
+})
+
+Combat:CreateInput({
+	Name = "Teleport Player (@nome)",
+	PlaceholderText = "Nome do player",
+	Callback = function(txt)
+		TargetName = txt
+	end
+})
+
+Combat:CreateToggle({
+	Name = "Ativar Teleporte",
+	CurrentValue = false,
+	Callback = function(v)
+		AutoTP = v
+	end
+})
+
+Combat:CreateSection("Hitbox")
+
+Combat:CreateInput({
+	Name = "Hitbox Global",
+	PlaceholderText = "Ex: 10",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then HitboxGlobalSize = n end
+	end
+})
+
+Combat:CreateInput({
+	Name = "Nome Player (Hitbox)",
+	PlaceholderText = "Player",
+	Callback = function(txt)
+		TargetHitboxName = txt
+	end
+})
+
+Combat:CreateInput({
+	Name = "Hitbox Player",
+	PlaceholderText = "Ex: 30",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then HitboxTargetSize = n end
+	end
+})
+
+Combat:CreateInput({
+	Name = "Transparência Hitbox",
+	PlaceholderText = "0 a 1",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then HitboxTransparency = math.clamp(n,0,1) end
+	end
+})
+
+--------------------------------------------------
+-- PLAYER
+--------------------------------------------------
+Player:CreateInput({
+	Name = "WalkSpeed",
+	PlaceholderText = "Ex: 50",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then WalkSpeedValue = n end
+	end
+})
+
+Player:CreateInput({
+	Name = "JumpPower",
+	PlaceholderText = "Ex: 100",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then JumpPowerValue = n end
+	end
+})
+
+Player:CreateToggle({
+	Name = "Gravity Custom",
+	CurrentValue = false,
+	Callback = function(v)
+		GravityEnabled = v
+		workspace.Gravity = v and GravityValue or 196
+	end
+})
+
+Player:CreateInput({
+	Name = "Gravity Value",
+	PlaceholderText = "196 padrão",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then GravityValue = n end
+	end
+})
+
+Player:CreateButton({
+	Name = "Salvar Spawn",
+	Callback = function()
+		if HRP then SaveSpawnPos = HRP.CFrame end
+	end
+})
+
+--------------------------------------------------
+-- VISUAL
+--------------------------------------------------
+Visual:CreateToggle({
+	Name = "ESP Players",
+	CurrentValue = false,
+	Callback = function(v)
+		ESPEnabled = v
+	end
+})
+
+--------------------------------------------------
+-- MISC
+--------------------------------------------------
+Misc:CreateButton({
+	Name = "Plataforma",
+	Callback = function()
+		if not Platform then
+			Platform = Instance.new("Part", workspace)
+			Platform.Size = Vector3.new(50,2,50)
+			Platform.Anchored = true
+			Platform.Material = Enum.Material.Neon
+			Platform.Color = Color3.fromRGB(0,170,255)
+		end
+		Platform.CFrame = HRP.CFrame + Vector3.new(0,8,0)
+		HRP.CFrame = Platform.CFrame + Vector3.new(0,4,0)
+	end
+})
+
+--------------------------------------------------
+-- FUNÇÕES AUX
+--------------------------------------------------
+local function IsAlive(p)
+	return p and p.Character
+	and p.Character:FindFirstChild("Humanoid")
+	and p.Character.Humanoid.Health > 0
+	and p.Character:FindFirstChild("HumanoidRootPart")
 end
 
--- ===============================
--- SCRIPTS DATABASE (INFINITO)
--- ===============================
-local Scripts = {
-
-    ["default"] = [[
-print("VoxTheSeaPaste carregado com sucesso")
-]],
-
-    ["speed"] = [[
--- SEU SCRIPT 1
-print("Speed Menu carregado")
-]],
-
-    ["mm2"] = [[
--- SEU SCRIPT 2
-print("MM2 Hub carregado")
-]],
-
-    ["fling"] = [[
--- SEU SCRIPT 3
-print("Fling UI carregado")
-]]
-
-}
-
--- ===============================
--- EXECUÇÃO
--- ===============================
-local code = Scripts[SCRIPT_ID]
-
-if not code then
-    warn("❌ SCRIPT NÃO ENCONTRADO:", SCRIPT_ID)
-    return
+local function GetTarget()
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LP and IsAlive(p) then
+			return p
+		end
+	end
 end
 
-local fn, err = loadstring(code)
-if not fn then
-    warn("Erro no script:", err)
-    return
-end
+--------------------------------------------------
+-- AUTO FARM
+--------------------------------------------------
+task.spawn(function()
+	while task.wait(0.1) do
+		if AutoFarm and HRP then
+			if not IsAlive(CurrentTarget) then
+				CurrentTarget = GetTarget()
+			end
+			if IsAlive(CurrentTarget) then
+				HRP.CFrame =
+					CurrentTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,2)
+			end
+		end
+	end
+end)
 
-fn()
--- VoxTheSeaPaste - Infinite Lua Pages + Key UI
--- Global Key
-local REQUIRED_KEY = "3030" -- key azul do seu encurtador
+--------------------------------------------------
+-- TP PLAYER
+--------------------------------------------------
+task.spawn(function()
+	while task.wait(0.2) do
+		if AutoTP and HRP then
+			local p = Players:FindFirstChild(TargetName)
+			if IsAlive(p) then
+				HRP.CFrame =
+					p.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,2)
+			end
+		end
+	end
+end)
 
--- ======================================
--- PEGAR PARAMETROS (?id= & ?key=)
--- ======================================
-local HttpService = game:GetService("HttpService")
+--------------------------------------------------
+-- HITBOX (EXATAMENTE IGUAL AO PRIMEIRO SCRIPT)
+--------------------------------------------------
+RunService.Stepped:Connect(function()
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = p.Character.HumanoidRootPart
+			hrp.CanCollide = false
+			hrp.Transparency = HitboxTransparency
+			hrp.Size = Vector3.new(HitboxGlobalSize,HitboxGlobalSize,HitboxGlobalSize)
 
-local function parseQuery(url)
-    local query = {}
-    local q = url:match("%?(.*)")
-    if not q then return query end
-    for pair in q:gmatch("[^&]+") do
-        local k,v = pair:match("([^=]+)=([^=]+)")
-        if k and v then
-            query[k] = v
-        end
-    end
-    return query
-end
+			if TargetHitboxName ~= "" and p.Name:lower():find(TargetHitboxName:lower()) then
+				hrp.Size = Vector3.new(HitboxTargetSize,HitboxTargetSize,HitboxTargetSize)
+			end
+		end
+	end
+end)
 
-local SCRIPT_ID = params.id or "default"
-local USER_KEY  = params.key or ""
+--------------------------------------------------
+-- WALK / JUMP FIX
+--------------------------------------------------
+task.spawn(function()
+	while task.wait(0.1) do
+		if Humanoid then
+			Humanoid.WalkSpeed = WalkSpeedValue
+			Humanoid.JumpPower = JumpPowerValue
+		end
+	end
+end)
 
--- ======================================
--- KEY SYSTEM
--- ======================================
-if USER_KEY ~= REQUIRED_KEY then
-    -- Key incorreta, mostra UI azul e bloqueia script
-    local StarterGui = game:GetService("StarterGui")
-    pcall(function()
-        local gui = Instance.new("ScreenGui", StarterGui)
-        gui.ResetOnSpawn = false
-        local frame = Instance.new("Frame", gui)
-        frame.Size = UDim2.new(0,400,0,200)
-        frame.Position = UDim2.new(0.5,-200,0.5,-100)
-        frame.BackgroundColor3 = Color3.fromRGB(0,120,255) -- azul
-        frame.BorderSizePixel = 0
-        local label = Instance.new("TextLabel", frame)
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.new(1,1,1)
-        label.Font = Enum.Font.GothamBold
-        label.TextSize = 28
-        label.Text = "❌ KEY INVÁLIDA!"
-    end)
-    warn("❌ KEY INCORRETA:", USER_KEY)
-    return
-end
-
--- ======================================
--- SCRIPTS DATABASE (INFINITO)
--- ======================================
-local Scripts = {
-
-    ["default"] = [[
-print("VoxTheSeaPaste carregado com sucesso")
-]],
-
-    ["speed"] = [[
--- SEU SCRIPT 1
-print("Speed Menu carregado")
-]],
-
-    ["mm2"] = [[
--- SEU SCRIPT 2
-print("MM2 Hub carregado")
-]],
-
-    ["fling"] = [[
--- SEU SCRIPT 3
-print("Fling UI carregado")
-]]
-
-}
-
--- ======================================
--- EXECUÇÃO
--- ======================================
-local code = Scripts[SCRIPT_ID]
-
-if not code then
-    -- NOT FOUND
-    local StarterGui = game:GetService("StarterGui")
-    pcall(function()
-        local gui = Instance.new("ScreenGui", StarterGui)
-        gui.ResetOnSpawn = false
-        local frame = Instance.new("Frame", gui)
-        frame.Size = UDim2.new(0,400,0,200)
-        frame.Position = UDim2.new(0.5,-200,0.5,-100)
-        frame.BackgroundColor3 = Color3.fromRGB(255,0,0) -- vermelho
-        frame.BorderSizePixel = 0
-        local label = Instance.new("TextLabel", frame)
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.new(1,1,1)
-        label.Font = Enum.Font.GothamBold
-        label.TextSize = 28
-        label.Text = "❌ SCRIPT NÃO ENCONTRADO!"
-    end)
-    warn("❌ SCRIPT NÃO ENCONTRADO:", SCRIPT_ID)
-    return
-end
-
--- Executa o script
-local fn, err = loadstring(code)
-if not fn then
-    warn("Erro no script:", err)
-    return
-end
-fn()
+--------------------------------------------------
+-- ESP
+--------------------------------------------------
+task.spawn(function()
+	while task.wait(1) do
+		for _,p in ipairs(Players:GetPlayers()) do
+			if p ~= LP and IsAlive(p) then
+				if ESPEnabled and not p.Character:FindFirstChild("ESP") then
+					local box = Instance.new("BoxHandleAdornment")
+					box.Name = "ESP"
+					box.Adornee = p.Character.HumanoidRootPart
+					box.Size = Vector3.new(4,6,4)
+					box.Color3 = Color3.new(1,0,0)
+					box.AlwaysOnTop = true
+					box.Transparency = 0.5
+					box.Parent = p.Character
+				elseif not ESPEnabled and p.Character:FindFirstChild("ESP") then
+					p.Character.ESP:Destroy()
+				end
+			end
+		end
+	end
+end)
