@@ -25,6 +25,9 @@ function getLuaPage(url){
         return "";
     }
 }
+const pageName = `init.lua${pageCounter}`;
+luaPages[pageName] = document.getElementById("scriptEditor").value.trim();
+pageCounter++;
 
 // Exemplo de uso:
 // loadstring(getLuaPage("https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/init.lua2"))()
