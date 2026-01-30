@@ -1,0 +1,27 @@
+<script>
+const BASE_RAW_URL = "https://raw.githubusercontent.com/Hourvester/Kingjoll/main/init.lua";
+let pageNumber = 2; // começa no init.lua2
+
+function useEditorScript() {
+    const script = document.getElementById("scriptEditor").value.trim();
+    if (!script) {
+        alert("Editor vazio");
+        return;
+    }
+
+    const loadstringBox = document.getElementById("loadstringBox");
+
+    loadstringBox.value =
+`loadstring(game:HttpGet("${BASE_RAW_URL}${pageNumber}"))()`;
+
+    // apenas incrementa para o próximo arquivo
+    pageNumber++;
+}
+
+function copyLoadstring() {
+    const box = document.getElementById("loadstringBox");
+    box.select();
+    document.execCommand("copy");
+    alert("Loadstring copiado!");
+}
+</script>

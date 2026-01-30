@@ -1,0 +1,2 @@
+local reg = {}
+return reg
