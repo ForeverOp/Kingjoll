@@ -141,33 +141,62 @@ function copyLoadstring(){
 </body>
 </html>
 
-<textarea id="scriptEditor" style="height:200px;">print("Hello World")</textarea>
-<button onclick="useEditorScript()">Usar este Script</button>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>VoxTheSeaPaste Editor</title>
+<style>
+body { background:#000; color:#0f0; font-family:monospace; padding:20px; }
+textarea { width:100%; background:#111; color:#0f0; font-family:monospace; }
+button { padding:8px 12px; margin-top:5px; cursor:pointer; background:#0f0; color:#000; border:none; }
+.card { margin-bottom:20px; padding:10px; border:1px solid #0f0; border-radius:8px; }
+</style>
+</head>
+<body>
 
-<textarea id="loadstringBox" readonly style="height:80px;"></textarea>
+<section class="card">
+<h2>📝 Editor de Script Lua</h2>
+<textarea id="scriptEditor" rows="8" placeholder="Cole seu script Lua aqui..."></textarea>
+<button onclick="useEditorScript()">Usar este Script</button>
+</section>
+
+<section class="card">
+<h2>🔗 Loadstring Gerado</h2>
+<textarea id="loadstringBox" rows="3" readonly></textarea>
+<button onclick="copyLoadstring()">📋 Copiar Loadstring</button>
+</section>
 
 <script>
 let savedScripts = {};
-let pageCounter = 1;
+let pageCounter = 2; // init.lua2
 
-function useEditorScript() {
+const BASE_URL = "https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/";
+
+function useEditorScript(){
     const script = document.getElementById("scriptEditor").value.trim();
     if(!script){ alert("Editor vazio"); return; }
 
-    // salva internamente
-    const pageName = "init.lua" + pageCounter;
+    const pageName = `init.lua${pageCounter}`;
     savedScripts[pageName] = script;
 
-    // gera “link GitHub” virtual
+    // gerar loadstring “simulando GitHub” mas usando o script interno
     const loadstringBox = document.getElementById("loadstringBox");
-    loadstringBox.value = `loadstring(getVirtualScript("${pageName}"))()`;
+    loadstringBox.value = `loadstring(getVirtualScript("${BASE_URL}${pageName}"))()`;
 
-    alert(`Script salvo como ${pageName} e loadstring pronto!`);
+    alert(`Script salvo como ${pageName} (internamente na página)`);
     pageCounter++;
 }
 
-// função que simula o get do GitHub
-function getVirtualScript(pageName){
+function copyLoadstring(){
+    const box = document.getElementById("loadstringBox");
+    box.select();
+    document.execCommand("copy");
+    alert("Loadstring copiado!");
+}
+
+// função que simula pegar do GitHub
+function getVirtualScript(url){
+    const pageName = url.split("/").pop(); // pega init.luaX
     if(savedScripts[pageName]){
         return savedScripts[pageName];
     } else {
@@ -176,6 +205,9 @@ function getVirtualScript(pageName){
     }
 }
 
-// Exemplo de uso no console:
-// loadstring(getVirtualScript("init.lua1"))()
+// Exemplo de teste no console:
+// loadstring(getVirtualScript("https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/init.lua2"))()
 </script>
+
+</body>
+</html>
