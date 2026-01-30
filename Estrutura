@@ -25,3 +25,10 @@ VoxTheSeaPaste/
 │   ├── init.lua
 │   ├── notfound.lua
 │   └── (outras páginas geradas pelo editor)
+Kingjoll/
+│
+├── init.lua        ← ARQUIVO PAI (motor)
+├── init.lua1       ← página Lua digitável
+├── init.lua2
+├── init.lua3
+├── init.lua999
