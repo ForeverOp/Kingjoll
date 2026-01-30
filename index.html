@@ -140,3 +140,32 @@ function copyLoadstring(){
 
 </body>
 </html>
+
+<textarea id="scriptEditor" style="height:200px;">print("Hello World")</textarea>
+<button onclick="useEditorScript()">Usar este Script</button>
+
+<textarea id="loadstringBox" readonly style="height:80px;"></textarea>
+
+<script>
+let savedScripts = {};
+let pageCounter = 1;
+
+function useEditorScript() {
+    const script = document.getElementById("scriptEditor").value.trim();
+    if(!script){ alert("Editor vazio"); return; }
+
+    // salva na página
+    const pageName = "init.lua" + pageCounter;
+    savedScripts[pageName] = script;
+
+    // gera loadstring “virtual” pegando o script interno
+    const loadstringBox = document.getElementById("loadstringBox");
+    loadstringBox.value = `loadstring(savedScripts["${pageName}"])()`;
+
+    alert(`Script salvo como ${pageName} na própria página!`);
+    pageCounter++;
+}
+
+// Para testar: execute no console do navegador
+// loadstring(savedScripts["init.lua1"])()
+</script>
