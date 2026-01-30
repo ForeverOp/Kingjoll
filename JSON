@@ -1,0 +1,62 @@
+function updateLoadstring(scriptNum = "notfound"){
+    const box = document.getElementById("loadstringBox")
+    const url = scriptURLs[scriptNum] || scriptURLs["notfound"]
+    box.value = `loadstring(game:HttpGet("${url}"))()`
+}
+function loadScript(num){
+    currentScript = predefinedScripts[num] || "-- Script vazio";
+    document.getElementById("scriptEditor").value = currentScript;
+    show("loadstring");
+    updateLoadstring(num);  // agora pega o script correto
+}
+function useEditorScript(){
+    const text = document.getElementById("scriptEditor").value.trim()
+    if(!text){ alert("Editor vazio"); return }
+    currentScript = text
+    show("loadstring")
+    updateLoadstring("init") // se quiser gerar sempre init.lua do editor
+}
+const scriptURLs = {
+  1: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/script1.lua",
+  2: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/script2.lua",
+  3: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/script3.lua",
+  notfound: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/notfound.lua"
+};
+// Mapear scripts para páginas Lua reais
+const scriptURLs = {
+  1: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/script1.lua",
+  2: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/script2.lua",
+  3: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/script3.lua",
+  init: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/init.lua",
+  notfound: "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste/notfound.lua"
+};
+
+let currentScriptPage = "init"; // página Lua atual
+function useEditorScript(page="init"){
+    const text = document.getElementById("scriptEditor").value.trim();
+    if(!text){
+        alert("Editor vazio");
+        return;
+    }
+
+    // Aqui você salva na página Lua correspondente
+    currentScriptPage = page;
+
+    // Gera o loadstring apontando para essa página
+    updateLoadstring(page);
+    show("loadstring");
+}
+function updateLoadstring(page){
+    const box = document.getElementById("loadstringBox");
+    const url = scriptURLs[page] || scriptURLs["notfound"];
+    box.value = `loadstring(game:HttpGet("${url}"))()`;
+}
+function copyLoadstring(){
+    const box = document.getElementById("loadstringBox");
+    box.select(); // seleciona o conteúdo
+    document.execCommand("copy"); // copia
+    alert("Loadstring copiado: " + box.value);
+}
+loadstring(game:HttpGet(
+  "https://SEU_LINK_RAW/init.lua?id=" + scriptId + "&key=Nerph"
+))()

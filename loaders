@@ -1,0 +1,7 @@
+local BASE = "https://raw.githubusercontent.com/SEU_USUARIO/SEU_REPO/main/VoxTheSeaPaste/scripts"
+
+for i = 1, 100 do
+    pcall(function()
+        loadstring(game:HttpGet(BASE .. "/" .. i .. ".lua"))()
+    end)
+end
