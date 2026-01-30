@@ -1,0 +1,1 @@
+print("Combat system ativo")
