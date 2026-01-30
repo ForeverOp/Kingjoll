@@ -3,402 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <title>VoxTheSeaPaste</title>
+
 <style>
-body {
-  margin:0;
-  padding:20px;
-  background:#0d0d0d;
-  color:#0ff;
-  font-family:monospace;
-}
-.card {
-  background:#111;
-  padding:15px;
-  margin-bottom:20px;
-  border-radius:10px;
-  box-shadow:0 0 10px #0ff;
-}
-textarea {
-  width:100%;
-  background:#000;
-  color:#0ff;
-  font-family:monospace;
-  font-size:14px;
-  padding:10px;
-  border:none;
-  border-radius:5px;
-  resize:vertical;
-}
-button.action {
-  margin-top:10px;
-  padding:8px 12px;
-  background:#0ff;
-  color:#000;
-  border:none;
-  border-radius:5px;
-  cursor:pointer;
-  font-weight:bold;
-}
-button.action:hover { background:#0aa; }
-h2 { margin-top:0; }
-.navbar {
-  display:flex;
-  gap:10px;
-  margin-bottom:15px;
-}
-.navbar button {
-  padding:6px 12px;
-  border:none;
-  border-radius:5px;
-  background:#000;
-  color:#0ff;
-  cursor:pointer;
-}
-.navbar button.active { background:#0ff; color:#000; }
-.tabcontent { display:none; padding:10px 0; }
-.tabcontent.active { display:block; }
-</style>
-</head>
-<body>
-
-<div class="navbar">
-  <button class="tablinks active" onclick="openTab(event,'Settings')">Settings</button>
-  <button class="tablinks" onclick="openTab(event,'Scripts')">Scripts Prontos</button>
-  <button class="tablinks" onclick="openTab(event,'Download')">Download Page</button>
-</div>
-
-<!-- Settings -->
-<div id="Settings" class="tabcontent active">
-  <h2>⚙️ Configurações</h2>
-  <p><a href="https://wa.me/5538991264107" target="_blank" style="color:#0ff;">Converse comigo pelo WhatsApp</a></p>
-  <p>Suporte futuro...</p>
-</div>
-
-<!-- Scripts Prontos -->
-<div id="Scripts" class="tabcontent">
-  <h2>📂 Scripts Prontos</h2>
-  <ul>
-    <li>Script 1</li>
-    <li>Script 2</li>
-    <li>Script 3</li>
-  </ul>
-</div>
-
-<!-- Download Page -->
-<div id="Download" class="tabcontent">
-  <h2>⬇ Download</h2>
-  <p>Aqui você pode colocar links de download futuramente.</p>
-</div>
-
-<!-- Editor Lua -->
-<section class="card">
-<h2>📝 Editor de Script Lua</h2>
-<textarea id="scriptEditor" style="height:260px;">
--- Cole seu script Lua aqui
-print("Kingjoll Editor Digital")
-</textarea>
-<button class="action" onclick="useEditorScript()">Usar este Script</button>
-</section>
-
-<!-- Loadstring -->
-<section class="card">
-<h2>🔗 Loadstring Gerado</h2>
-<textarea id="loadstringBox" readonly style="height:120px;"></textarea>
-<button class="action" onclick="copyLoadstring()">📋 Copiar Loadstring</button>
-</section>
-
-<script>
-function openTab(evt, tabName) {
-  const tabcontents = document.getElementsByClassName("tabcontent");
-  const tablinks = document.getElementsByClassName("tablinks");
-  for(let i=0;i<tabcontents.length;i++){ tabcontents[i].classList.remove("active"); }
-  for(let i=0;i<tablinks.length;i++){ tablinks[i].classList.remove("active"); }
-  document.getElementById(tabName).classList.add("active");
-  evt.currentTarget.classList.add("active");
-}
-
-/* Editor digital + Loadstring */
-const BASE_RAW_URL = "https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/init.lua";
-let pageNumber = 2;
-
-function useEditorScript(){
-    const script = document.getElementById("scriptEditor").value.trim();
-    if(!script){ alert("Editor vazio"); return; }
-
-    const loadstringBox = document.getElementById("loadstringBox");
-    loadstringBox.value = `loadstring(game:HttpGet("${BASE_RAW_URL}${pageNumber}"))()`;
-    pageNumber++; // incrementa página
-}
-
-function copyLoadstring(){
-    const box = document.getElementById("loadstringBox");
-    box.select();
-    document.execCommand("copy");
-    alert("Loadstring copiado!");
-}
-</script>
-
-</body>
-</html>
-
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<title>VoxTheSeaPaste Editor</title>
-<style>
-body { background:#000; color:#0f0; font-family:monospace; padding:20px; }
-textarea { width:100%; background:#111; color:#0f0; font-family:monospace; }
-button { padding:8px 12px; margin-top:5px; cursor:pointer; background:#0f0; color:#000; border:none; }
-.card { margin-bottom:20px; padding:10px; border:1px solid #0f0; border-radius:8px; }
-</style>
-</head>
-<body>
-
-<section class="card">
-<h2>📝 Editor de Script Lua</h2>
-<textarea id="scriptEditor" rows="8" placeholder="Cole seu script Lua aqui..."></textarea>
-<button onclick="useEditorScript()">Usar este Script</button>
-</section>
-
-<section class="card">
-<h2>🔗 Loadstring Gerado</h2>
-<textarea id="loadstringBox" rows="3" readonly></textarea>
-<button onclick="copyLoadstring()">📋 Copiar Loadstring</button>
-</section>
-
-<script>
-let savedScripts = {};
-let pageCounter = 2; // init.lua2
-
-const BASE_URL = "https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/";
-
-function useEditorScript(){
-    const script = document.getElementById("scriptEditor").value.trim();
-    if(!script){ alert("Editor vazio"); return; }
-
-    const pageName = `init.lua${pageCounter}`;
-    savedScripts[pageName] = script;
-
-    // gerar loadstring “simulando GitHub” mas usando o script interno
-    const loadstringBox = document.getElementById("loadstringBox");
-    loadstringBox.value = `loadstring(getVirtualScript("${BASE_URL}${pageName}"))()`;
-
-    alert(`Script salvo como ${pageName} (internamente na página)`);
-    pageCounter++;
-}
-
-function copyLoadstring(){
-    const box = document.getElementById("loadstringBox");
-    box.select();
-    document.execCommand("copy");
-    alert("Loadstring copiado!");
-}
-
-// função que simula pegar do GitHub
-function getVirtualScript(url){
-    const pageName = url.split("/").pop(); // pega init.luaX
-    if(savedScripts[pageName]){
-        return savedScripts[pageName];
-    } else {
-        alert(`Página ${pageName} não encontrada!`);
-        return "";
-    }
-}
-
-// Exemplo de teste no console:
-// loadstring(getVirtualScript("https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/init.lua2"))()
-</script>
-
-</body>
-</html>
-
-<html lang="pt-br">
-<head>
-<meta charset="UTF-8">
-<title>VoxTheSeaPaste</title>
-<style>
-/* ======================== */
-/* Estilo geral da página */
-body {
+body{
     margin:0;
-    font-family: monospace;
-    background: #0a0a0a;
-    color: #0f0;
+    background:#050b14;
+    color:#e6f0ff;
+    font-family:monospace;
 }
-h2 { margin:0 0 10px 0; }
-.card {
-    background:#111;
-    border:1px solid #0f0;
-    border-radius:8px;
-    padding:10px;
-    margin:10px;
+header{
+    padding:15px;
+    background:#0a1a33;
+    text-align:center;
+    font-size:18px;
+    color:#4da3ff;
 }
-textarea {
+main{
+    padding:20px;
+    max-width:900px;
+    margin:auto;
+}
+textarea{
     width:100%;
-    background:#000;
-    color:#0f0;
-    font-family: monospace;
+    background:#02060d;
+    color:#9fd0ff;
+    border:1px solid #1f4d99;
+    padding:12px;
+    resize:vertical;
     font-size:14px;
-    border:1px solid #0f0;
-    border-radius:4px;
-    resize:none;
 }
-button {
-    margin-top:5px;
-    padding:8px 12px;
-    background:#0f0;
-    color:#000;
+button{
+    margin-top:10px;
+    padding:10px 16px;
+    background:#1f6cff;
+    color:#fff;
     border:none;
-    border-radius:4px;
     cursor:pointer;
+    font-weight:bold;
 }
-nav {
-    display:flex;
-    background:#050505;
-    padding:5px;
+button:hover{
+    background:#1554c9;
 }
-nav button {
-    margin-right:5px;
-    background:#0f0;
-    color:#000;
+.box{
+    margin-top:20px;
+    border:1px solid #163a70;
+    padding:15px;
+    background:#030914;
 }
-.hidden { display:none; }
+label{
+    display:block;
+    margin-bottom:6px;
+    color:#6fb6ff;
+}
 </style>
 </head>
+
 <body>
 
-<!-- ========== MENU ========== -->
-<nav>
-<button onclick="showTab('editor')">Editor Script</button>
-<button onclick="showTab('loadstring')">Loadstring</button>
-<button onclick="showTab('scripts')">Scripts Prontos</button>
-<button onclick="showTab('download')">Download Page</button>
-<button onclick="showTab('settings')">Settings</button>
-</nav>
+<header>
+VoxTheSeaPaste — Editor Lua (GitHub Raw)
+</header>
 
-<!-- ========== EDITOR SCRIPT ========== -->
-<section id="editor" class="card">
-<h2>📝 Editor de Script Lua</h2>
-<textarea id="scriptEditor" rows="8" placeholder="Cole seu script Lua aqui..."></textarea>
-<button onclick="useEditorScript()">Usar este Script</button>
-</section>
+<main>
 
-<!-- ========== LOADSTRING ========== -->
-<section id="loadstring" class="card hidden">
-<h2>🔗 Loadstring Gerado</h2>
-<textarea id="loadstringBox" rows="3" readonly></textarea>
-<button onclick="copyLoadstring()">📋 Copiar Loadstring</button>
-</section>
+<!-- EDITOR -->
+<div class="box">
+<label>📝 Editor de Script Lua</label>
+<textarea id="scriptEditor" rows="12">
+print("Meu script Lua aqui")
+</textarea>
+</div>
 
-<!-- ========== SCRIPTS PRONTOS ========== -->
-<section id="scripts" class="card hidden">
-<h2>📦 Scripts Prontos</h2>
-<ul id="scriptList"></ul>
-</section>
+<!-- CONFIG LINK -->
+<div class="box">
+<label>🔢 Número da página (init.luaX)</label>
+<input id="pageNumber" type="number" value="1" min="1" style="width:100%;padding:8px;background:#02060d;color:#9fd0ff;border:1px solid #1f4d99;">
+</div>
 
-<!-- ========== DOWNLOAD PAGE ========== -->
-<section id="download" class="card hidden">
-<h2>💾 Download Page</h2>
-<p>Clique para baixar os scripts salvos:</p>
-<button onclick="downloadScripts()">Download Todos Scripts</button>
-</section>
+<!-- BOTÃO -->
+<button onclick="gerarLoadstring()">Gerar Loadstring</button>
 
-<!-- ========== SETTINGS ========== -->
-<section id="settings" class="card hidden">
-<h2>⚙️ Settings</h2>
-<p>Converse comigo pelo WhatsApp:</p>
-<a href="https://wa.me/5538991264107" target="_blank">
-<button>📲 WhatsApp</button></a>
-<p>Suporte: Em breve...</p>
-</section>
+<!-- RESULTADO -->
+<div class="box">
+<label>🔗 Loadstring FINAL</label>
+<textarea id="loadstringBox" rows="5" readonly></textarea>
+<button onclick="copiar()">📋 Copiar Loadstring</button>
+</div>
+
+</main>
 
 <script>
-// ====================
-// Variáveis principais
-// ====================
-let savedScripts = {};      // Guarda os scripts digitados
-let pageCounter = 1;        // init.lua1, init.lua2...
-const BASE_URL = "https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/";
+const BASE =
+"https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/";
 
-// ====================
-// Função de abas
-// ====================
-function showTab(tabId){
-    ['editor','loadstring','scripts','download','settings'].forEach(id=>{
-        document.getElementById(id).classList.add('hidden');
-    });
-    document.getElementById(tabId).classList.remove('hidden');
+function gerarLoadstring(){
+    const n = document.getElementById("pageNumber").value;
+    const link = BASE + "init.lua" + n;
+
+    const result =
+`loadstring(game:HttpGet("${link}"))()`;
+
+    document.getElementById("loadstringBox").value = result;
 }
 
-// ====================
-// Função editor → loadstring
-// ====================
-function useEditorScript(){
-    const script = document.getElementById("scriptEditor").value.trim();
-    if(!script){ alert("Editor vazio"); return; }
-
-    const pageName = `init.lua${pageCounter}`;
-    savedScripts[pageName] = script;
-
-    // atualiza loadstring
-    const loadstringBox = document.getElementById("loadstringBox");
-    loadstringBox.value = `loadstring(getVirtualScript("${BASE_URL}${pageName}"))()`;
-
-    // adiciona ao menu Scripts Prontos
-    const li = document.createElement('li');
-    li.textContent = pageName;
-    document.getElementById('scriptList').appendChild(li);
-
-    alert(`Script salvo como ${pageName}`);
-    pageCounter++;
-    showTab('loadstring');
-}
-
-// ====================
-// Copiar loadstring
-// ====================
-function copyLoadstring(){
-    const box = document.getElementById("loadstringBox");
-    box.select();
+function copiar(){
+    const t = document.getElementById("loadstringBox");
+    t.select();
     document.execCommand("copy");
-    alert("Loadstring copiado!");
+    alert("Loadstring copiado");
 }
-
-// ====================
-// Simular GitHub raw
-// ====================
-function getVirtualScript(url){
-    const pageName = url.split("/").pop(); // pega init.luaX
-    if(savedScripts[pageName]){
-        return savedScripts[pageName];
-    } else {
-        alert(`Página ${pageName} não encontrada!`);
-        return "";
-    }
-}
-
-// ====================
-// Download scripts como .txt
-// ====================
-function downloadScripts(){
-    let content = "";
-    for(let page in savedScripts){
-        content += `-- ${page}\n${savedScripts[page]}\n\n`;
-    }
-    const blob = new Blob([content], {type:"text/plain"});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = "VoxTheSeaPaste_Scripts.txt";
-    a.click();
-}
-
-// ====================
-// Para teste: no console
-// loadstring(getVirtualScript("https://raw.githubusercontent.com/ForeverOp/Kingjoll/main/init.lua1"))()
-// ====================
 </script>
 
 </body>
 </html>
-
-<script src="luaPages.js"></script>
