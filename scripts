@@ -1,0 +1,847 @@
+scripts/
+├── -- PLACEID
+if game.PlaceId ~= 3082002798 then return end
+
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LP = Players.LocalPlayer
+
+--------------------------------------------------
+-- VARIÁVEIS
+--------------------------------------------------
+local AutoFarm = false
+local AutoTP = false
+local ESPEnabled = false
+
+local HitboxGlobalSize = 5
+local HitboxTargetSize = 10
+local HitboxTransparency = 0.7
+local TargetHitboxName = ""
+local TargetName = ""
+
+local WalkSpeedValue = 16
+local JumpPowerValue = 50
+local SaveSpawnPos
+
+local GravityValue = workspace.Gravity
+local GravityEnabled = false
+
+local Platform
+local CurrentTarget
+local Character, HRP, Humanoid
+
+--------------------------------------------------
+-- CHARACTER FIX (RESPAWN)
+--------------------------------------------------
+local function UpdateCharacter()
+	Character = LP.Character or LP.CharacterAdded:Wait()
+	HRP = Character:WaitForChild("HumanoidRootPart")
+	Humanoid = Character:WaitForChild("Humanoid")
+end
+
+UpdateCharacter()
+
+LP.CharacterAdded:Connect(function(char)
+	task.wait(0.3)
+	UpdateCharacter()
+	CurrentTarget = nil
+
+	if SaveSpawnPos and char:FindFirstChild("HumanoidRootPart") then
+		char.HumanoidRootPart.CFrame = SaveSpawnPos
+	end
+
+	if GravityEnabled then
+		workspace.Gravity = GravityValue
+	end
+end)
+
+--------------------------------------------------
+-- RAYFIELD + KEY
+--------------------------------------------------
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+	Name = "Speed Menu PRO",
+	LoadingTitle = "Speed Menu",
+	LoadingSubtitle = "by XMenu",
+	KeySystem = true,
+	KeySettings = {
+		Title = "Speed Menu PRO",
+		Subtitle = "Digite a Key",
+		Note = "Key obrigatória",
+		FileName = "SpeedMenuKey",
+		SaveKey = false,
+		Key = { "Nerph" }
+	}
+})
+
+local Combat = Window:CreateTab("Combat")
+local Player = Window:CreateTab("Player")
+local Visual = Window:CreateTab("Visual")
+local Misc = Window:CreateTab("Misc")
+
+--------------------------------------------------
+-- COMBAT
+--------------------------------------------------
+Combat:CreateToggle({
+	Name = "Auto Farm",
+	CurrentValue = false,
+	Callback = function(v)
+		AutoFarm = v
+		if not v then CurrentTarget = nil end
+	end
+})
+
+Combat:CreateInput({
+	Name = "Teleport Player (@nome)",
+	PlaceholderText = "Nome do player",
+	Callback = function(txt)
+		TargetName = txt
+	end
+})
+
+Combat:CreateToggle({
+	Name = "Ativar Teleporte",
+	CurrentValue = false,
+	Callback = function(v)
+		AutoTP = v
+	end
+})
+
+Combat:CreateSection("Hitbox")
+
+Combat:CreateInput({
+	Name = "Hitbox Global",
+	PlaceholderText = "Ex: 10",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then HitboxGlobalSize = n end
+	end
+})
+
+Combat:CreateInput({
+	Name = "Nome Player (Hitbox)",
+	PlaceholderText = "Player",
+	Callback = function(txt)
+		TargetHitboxName = txt
+	end
+})
+
+Combat:CreateInput({
+	Name = "Hitbox Player",
+	PlaceholderText = "Ex: 30",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then HitboxTargetSize = n end
+	end
+})
+
+Combat:CreateInput({
+	Name = "Transparência Hitbox",
+	PlaceholderText = "0 a 1",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then HitboxTransparency = math.clamp(n,0,1) end
+	end
+})
+
+--------------------------------------------------
+-- PLAYER
+--------------------------------------------------
+Player:CreateInput({
+	Name = "WalkSpeed",
+	PlaceholderText = "Ex: 50",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then WalkSpeedValue = n end
+	end
+})
+
+Player:CreateInput({
+	Name = "JumpPower",
+	PlaceholderText = "Ex: 100",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then JumpPowerValue = n end
+	end
+})
+
+Player:CreateToggle({
+	Name = "Gravity Custom",
+	CurrentValue = false,
+	Callback = function(v)
+		GravityEnabled = v
+		workspace.Gravity = v and GravityValue or 196
+	end
+})
+
+Player:CreateInput({
+	Name = "Gravity Value",
+	PlaceholderText = "196 padrão",
+	Callback = function(txt)
+		local n = tonumber(txt)
+		if n then GravityValue = n end
+	end
+})
+
+Player:CreateButton({
+	Name = "Salvar Spawn",
+	Callback = function()
+		if HRP then SaveSpawnPos = HRP.CFrame end
+	end
+})
+
+--------------------------------------------------
+-- VISUAL
+--------------------------------------------------
+Visual:CreateToggle({
+	Name = "ESP Players",
+	CurrentValue = false,
+	Callback = function(v)
+		ESPEnabled = v
+	end
+})
+
+--------------------------------------------------
+-- MISC
+--------------------------------------------------
+Misc:CreateButton({
+	Name = "Plataforma",
+	Callback = function()
+		if not Platform then
+			Platform = Instance.new("Part", workspace)
+			Platform.Size = Vector3.new(50,2,50)
+			Platform.Anchored = true
+			Platform.Material = Enum.Material.Neon
+			Platform.Color = Color3.fromRGB(0,170,255)
+		end
+		Platform.CFrame = HRP.CFrame + Vector3.new(0,8,0)
+		HRP.CFrame = Platform.CFrame + Vector3.new(0,4,0)
+	end
+})
+
+--------------------------------------------------
+-- FUNÇÕES AUX
+--------------------------------------------------
+local function IsAlive(p)
+	return p and p.Character
+	and p.Character:FindFirstChild("Humanoid")
+	and p.Character.Humanoid.Health > 0
+	and p.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local function GetTarget()
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LP and IsAlive(p) then
+			return p
+		end
+	end
+end
+
+--------------------------------------------------
+-- AUTO FARM
+--------------------------------------------------
+task.spawn(function()
+	while task.wait(0.1) do
+		if AutoFarm and HRP then
+			if not IsAlive(CurrentTarget) then
+				CurrentTarget = GetTarget()
+			end
+			if IsAlive(CurrentTarget) then
+				HRP.CFrame =
+					CurrentTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,2)
+			end
+		end
+	end
+end)
+
+--------------------------------------------------
+-- TP PLAYER
+--------------------------------------------------
+task.spawn(function()
+	while task.wait(0.2) do
+		if AutoTP and HRP then
+			local p = Players:FindFirstChild(TargetName)
+			if IsAlive(p) then
+				HRP.CFrame =
+					p.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,2)
+			end
+		end
+	end
+end)
+
+--------------------------------------------------
+-- HITBOX (EXATAMENTE IGUAL AO PRIMEIRO SCRIPT)
+--------------------------------------------------
+RunService.Stepped:Connect(function()
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+			local hrp = p.Character.HumanoidRootPart
+			hrp.CanCollide = false
+			hrp.Transparency = HitboxTransparency
+			hrp.Size = Vector3.new(HitboxGlobalSize,HitboxGlobalSize,HitboxGlobalSize)
+
+			if TargetHitboxName ~= "" and p.Name:lower():find(TargetHitboxName:lower()) then
+				hrp.Size = Vector3.new(HitboxTargetSize,HitboxTargetSize,HitboxTargetSize)
+			end
+		end
+	end
+end)
+
+--------------------------------------------------
+-- WALK / JUMP FIX
+--------------------------------------------------
+task.spawn(function()
+	while task.wait(0.1) do
+		if Humanoid then
+			Humanoid.WalkSpeed = WalkSpeedValue
+			Humanoid.JumpPower = JumpPowerValue
+		end
+	end
+end)
+
+--------------------------------------------------
+-- ESP
+--------------------------------------------------
+task.spawn(function()
+	while task.wait(1) do
+		for _,p in ipairs(Players:GetPlayers()) do
+			if p ~= LP and IsAlive(p) then
+				if ESPEnabled and not p.Character:FindFirstChild("ESP") then
+					local box = Instance.new("BoxHandleAdornment")
+					box.Name = "ESP"
+					box.Adornee = p.Character.HumanoidRootPart
+					box.Size = Vector3.new(4,6,4)
+					box.Color3 = Color3.new(1,0,0)
+					box.AlwaysOnTop = true
+					box.Transparency = 0.5
+					box.Parent = p.Character
+				elseif not ESPEnabled and p.Character:FindFirstChild("ESP") then
+					p.Character.ESP:Destroy()
+				end
+			end
+		end
+	end
+end)
+├── -- ===============================
+-- 🌸 MM2 HUB LIMPO + LUMINWARE UNIFICADO 🌸
+-- LOCK + ESP + TP + ANTI AFK UI + LOW GFX + LuminWare
+-- KEY: Nerph
+-- ===============================
+
+-- ====================================
+-- SERVICES
+-- ====================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+
+-- ====================================
+-- BLOQUEAR NOTIFICAÇÕES
+-- ====================================
+pcall(function()
+    hookfunction(StarterGui.SetCore, function(self, coreType)
+        if coreType == "ChatMakeSystemMessage" or coreType == "SendNotification" then
+            return
+        end
+        return self
+    end)
+end)
+
+-- ====================================
+-- ANTI AFK
+-- ====================================
+local AntiAFK = false
+LocalPlayer.Idled:Connect(function()
+    if AntiAFK then
+        VirtualUser:Button2Down(Vector2.new(0,0), Camera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), Camera.CFrame)
+    end
+end)
+
+-- ====================================
+-- ANTI AFK UI
+-- ====================================
+local afkGui = Instance.new("ScreenGui", CoreGui)
+afkGui.Enabled = false
+afkGui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", afkGui)
+frame.Size = UDim2.new(0,420,0,260)
+frame.Position = UDim2.new(0.5,-210,0.5,-130)
+frame.BackgroundColor3 = Color3.fromRGB(70,70,70)
+frame.BackgroundTransparency = 0.25
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
+
+local function label(y, text, color, bold)
+    local l = Instance.new("TextLabel", frame)
+    l.Position = UDim2.new(0,20,0,y)
+    l.Size = UDim2.new(1,-40,0,40)
+    l.BackgroundTransparency = 1
+    l.TextXAlignment = Enum.TextXAlignment.Left
+    l.Font = bold and Enum.Font.GothamBold or Enum.Font.Gotham
+    l.TextSize = 16
+    l.TextColor3 = color
+    l.Text = text
+    return l
+end
+
+label(10,"🛡️ Anti AFK Monitor",Color3.new(1,1,1),true)
+local playLbl = label(70,"",Color3.fromRGB(200,200,200))
+local afkLbl = label(120,"",Color3.fromRGB(255,120,120))
+local statusLbl = label(180,"",Color3.fromRGB(120,255,120),true)
+
+local totalTime, afkTime = 0, 0
+local lastMove = os.clock()
+
+local function fmt(t)
+    return string.format("%02d:%02d:%02d",
+        math.floor(t/3600),
+        math.floor((t%3600)/60),
+        math.floor(t%60)
+    )
+end
+
+UserInputService.InputBegan:Connect(function()
+    lastMove = os.clock()
+    afkTime = 0
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if not AntiAFK then return end
+    totalTime += dt
+
+    if os.clock() - lastMove >= 5 then
+        afkTime += dt
+        statusLbl.Text = "Status: AFK"
+        statusLbl.TextColor3 = Color3.fromRGB(255,120,120)
+    else
+        statusLbl.Text = "Status: Jogando"
+        statusLbl.TextColor3 = Color3.fromRGB(120,255,120)
+    end
+
+    playLbl.Text = "🎮 Tempo jogando: "..fmt(totalTime)
+    afkLbl.Text = "⏸️ Tempo AFK: "..fmt(afkTime)
+end)
+
+-- ====================================
+-- LOW GRAPHICS
+-- ====================================
+local function setLowGraphics(on)
+    if not on then return end
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+    Lighting.FogEnd = 9e9
+
+    for _,v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.Material = Enum.Material.Plastic
+            v.Reflectance = 0
+        elseif v:IsA("Decal") or v:IsA("Texture") then
+            v.Transparency = 1
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = false
+        end
+    end
+end
+
+-- ====================================
+-- ACHAR MURDER
+-- ====================================
+local function getMurder()
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local bp = p:FindFirstChild("Backpack")
+            if (bp and bp:FindFirstChild("Knife")) or p.Character:FindFirstChild("Knife") then
+                return p
+            end
+        end
+    end
+end
+
+-- ====================================
+-- LOCK
+-- ====================================
+local LockEnabled = false
+RunService.RenderStepped:Connect(function()
+    if not LockEnabled then return end
+    local m = getMurder()
+    if m and m.Character and m.Character:FindFirstChild("HumanoidRootPart") then
+        Camera.CFrame = CFrame.new(Camera.CFrame.Position, m.Character.HumanoidRootPart.Position)
+    end
+end)
+
+-- ====================================
+-- ESP
+-- ====================================
+local ESPEnabled = false
+local ESP = {}
+
+local function role(p)
+    local ch, bp = p.Character, p:FindFirstChild("Backpack")
+    if ch and (ch:FindFirstChild("Knife") or (bp and bp:FindFirstChild("Knife"))) then
+        return "Murder", Color3.fromRGB(255,0,0)
+    end
+    if ch and (ch:FindFirstChild("Gun") or (bp and bp:FindFirstChild("Gun"))) then
+        return "Sheriff", Color3.fromRGB(255,255,0)
+    end
+    return "Inocente", Color3.fromRGB(255,255,255)
+end
+
+local function clearESP(p)
+    if ESP[p] then
+        for _,v in ipairs(ESP[p]) do v:Destroy() end
+        ESP[p] = nil
+    end
+end
+
+local function applyESP(p)
+    if not ESPEnabled or p == LocalPlayer or not p.Character then return end
+    clearESP(p)
+
+    local r,c = role(p)
+    local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    ESP[p] = {}
+
+    local h = Instance.new("Highlight", CoreGui)
+    h.Adornee = p.Character
+    h.FillColor = c
+    h.FillTransparency = 0.4
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    table.insert(ESP[p], h)
+
+    local bb = Instance.new("BillboardGui", hrp)
+    bb.Size = UDim2.new(0,200,0,40)
+    bb.StudsOffset = Vector3.new(0,3,0)
+    bb.AlwaysOnTop = true
+
+    local t = Instance.new("TextLabel", bb)
+    t.Size = UDim2.new(1,0,1,0)
+    t.BackgroundTransparency = 1
+    t.Text = p.Name.." ["..r.."]"
+    t.TextColor3 = c
+    t.TextStrokeTransparency = 0
+    t.Font = Enum.Font.GothamBold
+    t.TextSize = 14
+
+    table.insert(ESP[p], bb)
+end
+
+RunService.RenderStepped:Connect(function()
+    if ESPEnabled then
+        for _,p in ipairs(Players:GetPlayers()) do
+            applyESP(p)
+        end
+    end
+end)
+
+-- ====================================
+-- BOTÕES FIXOS
+-- ====================================
+local function circle(icon,pos)
+    local g = Instance.new("ScreenGui", CoreGui)
+    g.ResetOnSpawn = false
+
+    local b = Instance.new("TextButton", g)
+    b.Size = UDim2.new(0,48,0,48)
+    b.Position = pos
+    b.Text = icon
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 22
+    b.Active = false
+    b.Draggable = false
+    b.AutoButtonColor = true
+
+    Instance.new("UICorner", b).CornerRadius = UDim.new(1,0)
+    return g,b
+end
+
+local lockGui,lockBtn = circle("🌸",UDim2.new(0.83,0,0.04,0))
+lockGui.Enabled = false
+lockBtn.MouseButton1Click:Connect(function()
+    LockEnabled = not LockEnabled
+end)
+
+local tpGui,tpBtn = circle("💀",UDim2.new(0.90,0,0.04,0))
+tpGui.Enabled = false
+tpBtn.MouseButton1Click:Connect(function()
+    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then hrp.CFrame *= CFrame.new(0,0,-6) end
+end)
+
+-- ====================================
+-- RAYFIELD
+-- ====================================
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "🌸 MM2 HUB + LUMINWARE",
+    KeySystem = true,
+    KeySettings = { Key = "Nerph" }
+})
+
+-- Combat Tab
+Window:CreateTab("Combat"):CreateToggle({
+    Name = "Lock no Murder",
+    Callback = function(v)
+        LockEnabled = v
+        lockGui.Enabled = v
+    end
+})
+
+-- Visual Tab
+Window:CreateTab("Visual"):CreateToggle({
+    Name = "ESP Completo",
+    Callback = function(v)
+        ESPEnabled = v
+    end
+})
+
+Window:CreateTab("Visual"):CreateToggle({
+    Name = "Low Graphics",
+    Callback = function(v)
+        if v then setLowGraphics(true) end
+    end
+})
+
+-- Misc Tab
+Window:CreateTab("Misc"):CreateToggle({
+    Name = "TP Forward",
+    Callback = function(v)
+        tpGui.Enabled = v
+    end
+})
+
+Window:CreateTab("Misc"):CreateToggle({
+    Name = "Anti AFK",
+    Callback = function(v)
+        AntiAFK = v
+        afkGui.Enabled = v
+    end
+})
+
+-- ====================================
+-- CARREGAR LUMINWARE CORRETO (V2-89722)
+-- ====================================
+task.spawn(function()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Murder-Mystery-2-LuminWare-V2-89722"))()
+    end)
+    if not success then
+        warn("Não foi possível carregar o LuminWare: "..tostring(err))
+    end
+end)
+├── -- ===============================
+-- 🌫 FLING UI (RAYFIELD STYLE)
+-- FINAL FIXED VERSION
+-- ===============================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local LP = Players.LocalPlayer
+
+-- ================= NOTIFY =================
+pcall(function()
+    StarterGui:SetCore("SendNotification", {
+        Title = "Fling UI",
+        Text = "Script carregado com sucesso ✅",
+        Duration = 4
+    })
+end)
+
+-- ================= UI =================
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "FlingUI"
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.fromScale(0.32, 0.35)
+main.Position = UDim2.fromScale(0.34, 0.3)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+main.BackgroundTransparency = 0.25
+main.Active = true
+main.Draggable = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,16)
+Instance.new("UIStroke", main).Color = Color3.fromRGB(80,80,80)
+
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1,0,0.15,0)
+title.Text = "🌪 FLING TARGET"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(230,230,230)
+title.BackgroundTransparency = 1
+
+local dropdown = Instance.new("TextButton", main)
+dropdown.Position = UDim2.fromScale(0.1,0.25)
+dropdown.Size = UDim2.fromScale(0.8,0.15)
+dropdown.Text = "Selecionar Player"
+dropdown.Font = Enum.Font.Gotham
+dropdown.TextSize = 14
+dropdown.BackgroundColor3 = Color3.fromRGB(30,30,30)
+dropdown.TextColor3 = Color3.fromRGB(200,200,200)
+Instance.new("UICorner", dropdown)
+
+local toggle = Instance.new("TextButton", main)
+toggle.Position = UDim2.fromScale(0.1,0.5)
+toggle.Size = UDim2.fromScale(0.8,0.18)
+toggle.Text = "🔁 Loop Fling: OFF"
+toggle.Font = Enum.Font.GothamBold
+toggle.TextSize = 15
+toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+toggle.TextColor3 = Color3.fromRGB(255,100,100)
+Instance.new("UICorner", toggle)
+
+-- ================= PLAYER LIST =================
+local PlayerList = {}
+local PlayerIndex = 0
+local Target
+local Loop = false
+local SavedCFrame
+
+local function RefreshPlayers()
+    PlayerList = {}
+    for _,p in ipairs(Players:GetPlayers()) do
+        if p ~= LP then
+            table.insert(PlayerList, p)
+        end
+    end
+end
+
+RefreshPlayers()
+Players.PlayerAdded:Connect(RefreshPlayers)
+Players.PlayerRemoving:Connect(RefreshPlayers)
+
+dropdown.MouseButton1Click:Connect(function()
+    if #PlayerList == 0 then
+        dropdown.Text = "Nenhum player"
+        return
+    end
+
+    PlayerIndex += 1
+    if PlayerIndex > #PlayerList then PlayerIndex = 1 end
+    Target = PlayerList[PlayerIndex]
+    dropdown.Text = "🎯 "..Target.Name
+end)
+
+-- ================= SAFE FLING =================
+local function SafeFling()
+    if not Target or not Target.Character then return end
+    if not LP.Character then return end
+
+    local char = LP.Character
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local thrp = Target.Character:FindFirstChild("HumanoidRootPart")
+    if not hum or not hrp or not thrp then return end
+
+    SavedCFrame = hrp.CFrame
+
+    local oldHealth = hum.Health
+    hum.Health = math.huge
+    hum.PlatformStand = true
+
+    for _,v in ipairs(char:GetDescendants()) do
+        if v:IsA("BasePart") then
+            v.CanCollide = false
+            v.Massless = true
+        end
+    end
+
+    local bav = Instance.new("BodyAngularVelocity", hrp)
+    bav.AngularVelocity = Vector3.new(0,50000,0)
+    bav.MaxTorque = Vector3.new(1e9,1e9,1e9)
+
+    local bv = Instance.new("BodyVelocity", hrp)
+    bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+
+    local t = tick()
+    while tick() - t < 1.3 do
+        if not thrp.Parent then break end
+        hrp.CFrame = thrp.CFrame * CFrame.new(0,0,-1.2)
+        bv.Velocity = (thrp.Position - hrp.Position).Unit * 220
+        RunService.Heartbeat:Wait()
+    end
+
+    bav:Destroy()
+    bv:Destroy()
+
+    task.wait(0.05)
+    if hrp and SavedCFrame then
+        hrp.CFrame = SavedCFrame
+    end
+
+    hum.PlatformStand = false
+    hum.Health = oldHealth
+end
+
+-- ================= LOOP =================
+toggle.MouseButton1Click:Connect(function()
+    Loop = not Loop
+    toggle.Text = Loop and "🔁 Loop Fling: ON" or "🔁 Loop Fling: OFF"
+    toggle.TextColor3 = Loop and Color3.fromRGB(100,255,100) or Color3.fromRGB(255,100,100)
+
+    if Loop then
+        task.spawn(function()
+            while Loop do
+                pcall(SafeFling)
+                task.wait(0.35)
+            end
+        end)
+    end
+end)
+
+-- ================= FLOATING BUTTON =================
+local float = Instance.new("Frame", gui)
+float.Size = UDim2.fromOffset(70,70)
+float.Position = UDim2.fromScale(0.85,0.5)
+float.BackgroundColor3 = Color3.fromRGB(30,30,30)
+float.BackgroundTransparency = 0.15
+float.Active = true
+float.Draggable = true
+Instance.new("UICorner", float).CornerRadius = UDim.new(1,0)
+
+local flingBtn = Instance.new("TextButton", float)
+flingBtn.Size = UDim2.fromScale(1,1)
+flingBtn.Text = "🌪"
+flingBtn.Font = Enum.Font.GothamBold
+flingBtn.TextSize = 26
+flingBtn.BackgroundTransparency = 1
+flingBtn.TextColor3 = Color3.fromRGB(255,255,255)
+
+flingBtn.MouseButton1Click:Connect(SafeFling)
+
+-- setas
+local function Arrow(txt, pos, dir)
+    local b = Instance.new("TextButton", gui)
+    b.Size = UDim2.fromOffset(30,30)
+    b.Position = pos
+    b.Text = txt
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 18
+    b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    Instance.new("UICorner", b)
+
+    b.MouseButton1Click:Connect(function()
+        float.Position += dir
+    end)
+end
+
+Arrow("⬆", UDim2.fromScale(0.93,0.45), UDim2.fromScale(0,-0.02))
+Arrow("⬇", UDim2.fromScale(0.93,0.55), UDim2.fromScale(0,0.02))
+Arrow("⬅", UDim2.fromScale(0.90,0.5),  UDim2.fromScale(-0.02,0))
+Arrow("➡", UDim2.fromScale(0.96,0.5),  UDim2.fromScale(0.02,0))
