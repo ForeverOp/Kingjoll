@@ -1,0 +1,1 @@
+_G.VOX_SHUTDOWN = true

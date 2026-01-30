@@ -1,0 +1,15 @@
+local BASE = "https://raw.githubusercontent.com/AkariHiera/Foreverop/main/VoxTheSeaPaste"
+
+local function getKey(scriptName)
+    local ok, res = pcall(function()
+        return game:HttpGet(BASE.."/keys/"..scriptName..".key")
+    end)
+    if ok then
+        return res:gsub("%s+", "")
+    end
+end
+
+return function(scriptName, inputKey)
+    local realKey = getKey(scriptName)
+    return tostring(inputKey) == tostring(realKey)
+end

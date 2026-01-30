@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("LINK_RAW/init.lua"))()

