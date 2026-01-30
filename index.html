@@ -154,18 +154,28 @@ function useEditorScript() {
     const script = document.getElementById("scriptEditor").value.trim();
     if(!script){ alert("Editor vazio"); return; }
 
-    // salva na página
+    // salva internamente
     const pageName = "init.lua" + pageCounter;
     savedScripts[pageName] = script;
 
-    // gera loadstring “virtual” pegando o script interno
+    // gera “link GitHub” virtual
     const loadstringBox = document.getElementById("loadstringBox");
-    loadstringBox.value = `loadstring(savedScripts["${pageName}"])()`;
+    loadstringBox.value = `loadstring(getVirtualScript("${pageName}"))()`;
 
-    alert(`Script salvo como ${pageName} na própria página!`);
+    alert(`Script salvo como ${pageName} e loadstring pronto!`);
     pageCounter++;
 }
 
-// Para testar: execute no console do navegador
-// loadstring(savedScripts["init.lua1"])()
+// função que simula o get do GitHub
+function getVirtualScript(pageName){
+    if(savedScripts[pageName]){
+        return savedScripts[pageName];
+    } else {
+        alert(`Página ${pageName} não encontrada!`);
+        return "";
+    }
+}
+
+// Exemplo de uso no console:
+// loadstring(getVirtualScript("init.lua1"))()
 </script>
