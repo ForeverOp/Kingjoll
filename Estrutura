@@ -1,0 +1,27 @@
+VoxTheSeaPaste/
+│
+├── init.lua          <- script principal padrão
+├── script1.lua       <- Script 1
+├── script2.lua       <- Script 2
+├── script3.lua       <- Script 3
+├── notfound.lua      <- fallback para links inválidos
+├── index.html        <- sua página principal do encurtador
+└── keys/             <- pasta com keys se quiser│
+├── index.html         <- página principal do encurtador
+├── init.lua           <- script do editor padrão
+├── script1.lua        <- Script 1 (AutoFarm + Rayfield)
+├── script2.lua        <- Script 2 (MM2 HUB + LuminWare)
+├── script3.lua        <- Script 3 (Fling UI)
+├── notfound.lua       <- fallback caso o script não exista
+└── keys/              <- pasta com keys (se quiser)
+├── index.html
+├── script1.lua
+├── script2.lua
+├── script3.lua
+├── init.lua         <- usado pelo editor para gerar loadstring
+├── notfound.lua
+├── index.html        <- página principal
+├── pages/            <- pasta que contém páginas Lua
+│   ├── init.lua
+│   ├── notfound.lua
+│   └── (outras páginas geradas pelo editor)

@@ -1,0 +1,1 @@
+_G.VOX_ENV = getgenv and getgenv() or _G
